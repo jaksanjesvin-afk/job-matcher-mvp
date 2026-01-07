@@ -13,9 +13,9 @@
     "ingest:email": "tsx scripts/ingest-email.ts"
   },
   "dependencies": {
-    // Copilot: build fails because dotenv is missing. Add it correctly.
     "@anthropic-ai/sdk": "^0.30.0",
     "@prisma/client": "^5.22.0",
+    "dotenv": "^16.4.5",
     "imap": "^0.8.19",
     "mailparser": "^3.7.1",
     "next": "^14.2.0",
