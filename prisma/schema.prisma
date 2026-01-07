@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model CandidateProfile {
+  id        String   @id @default(uuid())
+  data      String   // JSON stringified
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  scores       CompatibilityScore[]
+  applications Application[]
+}
+
+model Job {
+  id              String   @id @default(uuid())
+  source          String
+  sourceUrl       String
+  datePosted      DateTime
+  dateDiscovered  DateTime @default(now())
+  title           String
+  company         String
+  location        String
+  jobType         String
+  remotePolicy    String
+  descriptionRaw  String
+  parsed          String   // JSON stringified
+  createdAt       DateTime @default(now())
+
+  scores        CompatibilityScore[]
+  applications  Application[]
+}
+
+model CompatibilityScore {
+  id             String   @id @default(uuid())
+  jobId          String
+  candidateId    String
+  overallScore   Float
+  subScores      String   // JSON stringified
+  gapList        String   // JSON stringified
+  riskList       String   // JSON stringified
+  recommendation String
+  createdAt      DateTime @default(now())
+
+  job       Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  candidate CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@index([candidateId])
+}
+
+model Application {
+  id              String   @id @default(uuid())
+  jobId           String
+  candidateId     String
+  cvContent       String
+  coverLetterEN   String
+  coverLetterDE   String
+  status          String   @default("draft")
+  appliedAt       DateTime?
+  createdAt       DateTime @default(now())
+
+  job       Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  candidate CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@index([candidateId])
+}
