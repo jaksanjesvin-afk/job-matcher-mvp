@@ -31,9 +31,7 @@ export class EmailIngestion {
         this.imap.openBox('INBOX', false, (err) => {
           if (err) return reject(err);
 
-          const searchCriteria: any[] = [
-            ['UNSEEN']
-          ];
+          const searchCriteria: any[] = [['UNSEEN']];
 
           this.imap.search(searchCriteria, (searchErr, results) => {
             if (searchErr) return reject(searchErr);
@@ -47,8 +45,10 @@ export class EmailIngestion {
             const fetcher = this.imap.fetch(results, { bodies: '' });
 
             fetcher.on('message', (msg) => {
-              msg.on('body', (stream) => {
-                simpleParser(stream, async (parseErr, parsed) => {
+              // IMPORTANT: "stream" typing may appear as ReadableStream in Next/Vercel builds.
+              // mailparser expects a Node stream (Source). Casting avoids TS build failure.
+              msg.on('body', (stream: any) => {
+                simpleParser(stream as any, async (parseErr, parsed) => {
                   if (parseErr) {
                     console.error('Error parsing email:', parseErr);
                     return;
@@ -58,7 +58,13 @@ export class EmailIngestion {
               });
             });
 
-            fetcher.once('error', reject);
+            fetcher.once('error', (e) => {
+              try {
+                this.imap.end();
+              } catch {}
+              reject(e);
+            });
+
             fetcher.once('end', () => {
               this.imap.end();
               resolve();
@@ -79,7 +85,7 @@ export class EmailIngestion {
 
       const urlRegex = /(https?:\/\/[^\s"']+)/gi;
       const urls = [...text.matchAll(urlRegex), ...html.matchAll(urlRegex)]
-        .map(m => m[1])
+        .map((m) => m[1])
         .filter((u, i, arr) => arr.indexOf(u) === i)
         .slice(0, 10);
 
@@ -99,7 +105,13 @@ export class EmailIngestion {
             remotePolicy: 'unknown',
             descriptionRaw: text,
             parsed: JSON.stringify({
-              requirements: { education: [], experience_years: '0-2', languages: [], must_have_skills: [], nice_to_have_skills: [] },
+              requirements: {
+                education: [],
+                experience_years: '0-2',
+                languages: [],
+                must_have_skills: [],
+                nice_to_have_skills: []
+              },
               responsibilities: [],
               keywords: []
             })
